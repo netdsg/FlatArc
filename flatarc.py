@@ -1,5 +1,9 @@
 #!/usr/bin/python3
 
+# This script comes with no warranty.
+
+# for support contact gatlin007 at gmail dot com
+
 import pexpect, time, sys, os, csv, pprint, datetime, shelve, re, sched
 from multiprocessing import Process, Queue
 from simplecrypt import *
