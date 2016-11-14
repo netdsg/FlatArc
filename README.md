@@ -27,29 +27,29 @@ Unbuntu example:
 
 As root do the following:
 
-#apt-get install python3-pip
-#apt-get install git
+apt-get install python3-pip
+apt-get install git
 
-#pip3 install pexpect
-#pip3 install simple-crypt
+pip3 install pexpect
+pip3 install simple-crypt
 
-#useradd flatarc
-#mkdir /usr/local/flatarc
-#chown flatarc:flatarc /usr/local/flatarc
+useradd flatarc
+mkdir /usr/local/flatarc
+chown flatarc:flatarc /usr/local/flatarc
 
-#cp flatarcd /etc/init.d/.
-#chmod +x /etc/init.d/flatarcd
+cp flatarcd /etc/init.d/.
+chmod +x /etc/init.d/flatarcd
 
 As user flatarc do the following:
 
-#cp flatarc.py /usr/local/flatarc/.
-#cp flatarcManage.py /usr/local/flatarc/.
-#chmod +x flatarc*
-#mkdir /usr/local/flatarc backups
+cp flatarc.py /usr/local/flatarc/.
+cp flatarcManage.py /usr/local/flatarc/.
+chmod +x flatarc*
+mkdir /usr/local/flatarc backups
 
 As root start the service:
 
-#/etc/init.d/flatarcd start
+/etc/init.d/flatarcd start
 
 ##################################################
 
