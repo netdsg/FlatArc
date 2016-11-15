@@ -3,6 +3,8 @@ A utility that automatically archives flat configuration files such as those fou
 
 This utility is intended to periodically backup flat configuration files at an interval dictated by the user.  If you would like this software to have additional functionality (or have any questions) please reach out to gatlin007 at gmail dot com.  FlatArc uses SSH to backup network devices, SCP to backup flat files on servers, and GIT in order to track changes in the files it is backing up.
 
+![alt tag](https://github.com/netdsg/FlatArc/blob/master/FlatArcFlow.png)
+
 Currently supported backups (others can be added; just ask):
 - Cisco IOS
 - JUNOS
