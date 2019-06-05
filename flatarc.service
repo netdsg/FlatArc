@@ -1,0 +1,16 @@
+### flatarc systemd service file
+[Unit]
+Description=flatarc service
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=flatarc
+ExecStart=/usr/bin/python3 /usr/local/flatarc/flatarc.py
+
+[Install]
+WantedBy=multi-user.target
+
