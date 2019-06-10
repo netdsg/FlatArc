@@ -1,4 +1,5 @@
-This Branch is for Version 2
+This Branch is for Version 2.
+
 Version 2 is not yet fully functional.  When Version 2 is complete it will be merged into the master branch.
 
 # FlatArc
