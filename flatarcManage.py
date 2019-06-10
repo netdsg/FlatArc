@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import os, sys, csv, pprint, getpass, json
+import os, sys, pprint, getpass, json
 from simplecrypt import *
 
 ############################################
@@ -348,7 +348,7 @@ while True:
     print('1 - Authentication Class management')
     print()
     print('2 - Add backup job.')
-    print('3 - Edit backup job')
+    print('3 - Edit/Delete backup job')
     print('4 - View backup jobs')
     print()
     print('99 - Exit')

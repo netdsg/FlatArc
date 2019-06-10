@@ -1,10 +1,6 @@
 #!/usr/bin/python3
 
-# This script comes with no warranty.
-
-# for support contact gatlin007 at gmail dot com
-
-import pexpect, time, sys, os, csv, pprint, datetime, shelve, re, sched
+import pexpect, time, sys, os, datetime, re, sched, json, getpass
 from multiprocessing import Process, Queue
 from simplecrypt import *
 
@@ -13,73 +9,45 @@ from simplecrypt import *
 ### These files should have permissions that do not allow others to view them.
 EVar = 'thisvariablehashesthepasswords'
 
-CommentTerm = re.compile(r'^#')
 ClassList = None
 
 def ReadTargets():
-    global DeviceList
     try:
-        DeviceData = open('/usr/local/flatarc/flatarcDeviceData.csv')
-        DeviceReader = csv.reader(DeviceData)
-        dDeviceList = list(DeviceReader)
-        DeviceData.close()
+        with open('/usr/local/flatarc/flatarcDeviceData.json') as ourfile:
+            jobHash = json.load(ourfile)
     except:
-        dDeviceList = []
+        jobHash = {}
         pass
+    return jobHash
 
-    try:
-        FileData = open('/usr/local/flatarc/flatarcFileData.csv')
-        FileReader = csv.reader(FileData)
-        FileList = list(FileReader)
-        FileData.close()
-    except:
-        FileList = []
-        pass
-    DeviceList = dDeviceList + FileList
-    return DeviceList
+def getAuthClassHash():
+    with open('/usr/local/flatarc/flatarcClass.json') as ourFile:
+        ourHash = json.load(ourFile)
+        for c in ourHash:
+            with open(('/usr/local/flatarc/auth_class_' + c + '.flatarc'), 'rb') as inbound:
+                cipherPass = inbound.read()
+            #print('working!')
+            ourHash[c]['pass'] = bytes.decode(decrypt(EVar, cipherPass))
+    return ourHash
 
-
-def ReadClassData():
-    try:
-        GetClassData()
-    except:
-        #print(sys.exc_info())
-        pass
-
-    if ClassList:
-        global PlainClassList
-        PlainClassList = []
-        for i in ClassList:
-            Class = i[0]
-            UserName = i[1]
-            Pass = bytes.decode(decrypt(EVar, i[2]))
-            PlainClassList.append([Class, UserName, Pass])
-
-### Password Database
-def GetClassData():
-    global ClassList
-    ClassFile = shelve.open('/usr/local/flatarc/FlatArcData')
-    ClassList = ClassFile['ClassList']
-    ClassFile.close()
 
 def DisplayText(VAR, VAR2):
     bZ = (VAR + VAR2)
     Z = bytes.decode(bZ)
     A = Z.splitlines()
-    #for i in A:
-    #    print(i)
+    for i in A:
+        print(i)
 
-def ScpSpawn(data, DeviceData):
+def ScpSpawn(data, jobName):
+
     try:
-        for i in PlainClassList:
-            if DeviceData[6] == i[0]:
-                UserName = i[1]
-                Password = i[2]
-                break
+        UserName = authHash[jobHash[jobName]['class']]['user']
+        Password = authHash[jobHash[jobName]['class']]['pass']
+
         S = pexpect.spawn('bash')
         S.expect('\$')
-        
-        S.sendline('scp -o StrictHostKeyChecking=no ' + UserName + '@' + DeviceData[1] + ':' + DeviceData[2] + ' /usr/local/flatarc/backups/' + DeviceData[5] + '/.')
+
+        S.sendline('scp -o StrictHostKeyChecking=no ' + UserName + '@' + jobHash[jobName]['ip'] + ':' + jobHash[jobName]['file'] + ' /usr/local/flatarc/backups/' + jobHash[jobName]['dir'] + '/' + jobHash[jobName]['file'].split('/')[-1] + '.' + jobName)
         S.expect('word:')
         DisplayText(S.before, S.after)
 
@@ -95,24 +63,24 @@ def ScpSpawn(data, DeviceData):
 
         S.close()
         
-        ReturnData = (DeviceData[0], Status)
+        ReturnData = (jobName, Status)
         data.put(ReturnData)
     except:
-        ReturnData = (DeviceData[0], 'Failed')
+        ReturnData = (jobName, 'Failed')
         data.put(ReturnData)
         S.close()
-        #print(sys.exc_info())
+        print(sys.exc_info())
         pass
 
-def CiscoSpawn(data, DeviceData):
+def CiscoSpawn(data, jobName):
     try:
-        for i in PlainClassList:
-            if DeviceData[6] == i[0]:
-                UserName = i[1]
-                Password = i[2]
-                break
-        prompt = (DeviceData[0] + '#')
-        S = pexpect.spawn('ssh -o StrictHostKeyChecking=no ' + UserName + '@' + DeviceData[1]) 
+        UserName = authHash[jobHash[jobName]['class']]['user']
+        Password = authHash[jobHash[jobName]['class']]['pass']
+        ### fix prompt matching!!!
+        #prompt = (DeviceData[0] + '#')
+        ### we are assuming we are logged in at the proper privilege leve for 'show run'
+        prompt = '#'
+        S = pexpect.spawn('ssh -o StrictHostKeyChecking=no ' + UserName + '@' + jobHash[i]['ip']) 
         S.expect('word:')
         DisplayText(S.before, S.after)
 
@@ -131,11 +99,11 @@ def CiscoSpawn(data, DeviceData):
 
         S.sendline('exit')
         S.close()
-        WriteFile(Result, DeviceData)
-        ReturnData = (DeviceData[0], 'Success')
+        WriteFile(Result, jobName)
+        ReturnData = (jobName, 'Success')
         data.put(ReturnData)
     except:
-        ReturnData = (DeviceData[0], 'Failed')
+        ReturnData = (jobName[0], 'Failed')
         data.put(ReturnData)
         S.close()
         print(sys.exc_info())
@@ -171,110 +139,90 @@ def JunosSpawn(data, DeviceData):
         ReturnData = (DeviceData[0], 'Failed')
         data.put(ReturnData)
         S.close()
-        #print(sys.exc_info())
+        print(sys.exc_info())
         pass
 
-### fix this when we need to backup files local to the FlatArc server ###
-def bashSpawn(data, DeviceData):
-    try:
-        S = pexpect.spawn('bash')
-        S.expect('\$')
-
-        S.sendline('cat ' + DeviceData[4])
-        S.expect('/usr/local/flatarc\$')
-        Result = S.before
-        DisplayText(S.before, S.after) 
-        
-        S.sendline('exit')
-        S.close()
-        S = None
-        WriteFile(Result, DeviceData)
-        ReturnData = (DeviceData[0], 'Success')
-        data.put(ReturnData)
-    except:
-        ReturnData = (DeviceData[0], 'Failed')
-        data.put(ReturnData)
-        S.close()
-        pass
-
-### add some file path error checking....
-def WriteFile(Content, DeviceData):
-    ConfTgt = DeviceData[0]
+def WriteFile(Content, jobName):
     cList = bytes.decode(Content).splitlines()
-    ConfigFile = open(('/usr/local/flatarc/backups/' + DeviceData[5] +'/' + ConfTgt), 'w')
+    ConfigFile = open(('/usr/local/flatarc/backups/' + jobHash[jobName]['dir'] +'/' + jobName), 'w')
     for i in cList:
         ConfigFile.write(i + '\n')
     ConfigFile.close()
 
-def Runner(Zulu):
-    Zulu = Zulu + 1
-    DeviceList = ReadTargets()
-    ReadClassData()
-    log = open('/usr/local/flatarc/flatarc_log.txt', 'a')
+###################################
+### Main Program 
+###################################
 
-    proc = []
-    cue = []
-    for i in DeviceList:
-        FindComment = CommentTerm.match(i[0])
-        if FindComment:
-            continue
-        if i[7] != 'up':
-            continue
-        if Zulu % int(i[4]) != 0:
-            #print(i[0] + ' - interval value - ' + i[4] + 'Zulu value = ' + str(Zulu))
-            continue
-        q = Queue()
-        if i[3] == 'cisco':
-            p = Process(target=CiscoSpawn, args=(q, i))
-        if i[3] == 'junos':
-            p = Process(target=JunosSpawn, args=(q, i))
-        if i[3] == 'scp':
-            p = Process(target=ScpSpawn, args=(q, i))
-        p.start()
-        proc.append(p)
-        cue.append(q)
-    for q in cue:
-        data = q.get()
-        #print(data)
-        log.write(datetime.datetime.isoformat(datetime.datetime.now()) + ' ' + data[0] + ' - ' + data[1]  + '\n')
-    for p in proc:
-        p.join()
+CurUser = getpass.getuser()
+if CurUser != 'flatarc':
+    print()
+    print('This program must only be utilized with the flatarc account.  If another user uses this account the directories and files it creates will not have the proper permissions for the flatarc daemon to utilize them.')
+    print()
+    print('Exiting...')
+    sys.exit()
 
-    log.close()
+lastRunHour = 'null'
 
-    DirList = []
-    for i in DeviceList:
-        DirList.append(i[5])
-    DirList = list(set(DirList))
-    time.sleep(2)
-    S = pexpect.spawn('bash')
-    S.expect('\$')
+while True:
+    if lastRunHour == datetime.datetime.now().hour:
+        time.sleep(60)
+    else:
+        jobHash = ReadTargets()
+        authHash = getAuthClassHash()
+        log = open('/usr/local/flatarc/flatarc_log.txt', 'a')
+        
+        dirSet = set()
+        proc = []
+        cue = []
+        for i in jobHash:
+            if jobHash[i]['status'] != 'up':
+                continue
+            if datetime.datetime.now().hour % int(jobHash[i]['interval']) != 0:
+                continue
+            dirSet.add(jobHash[i]['dir'])
+            q = Queue()
+            if jobHash[i]['protocol'] == 'ssh':
+                if jobHash[i]['syntax']  == 'cisco':
+                    p = Process(target=CiscoSpawn, args=(q, i))
+                elif jobHash[i]['syntax'] == 'junos':
+                    p = Process(target=JunosSpawn, args=(q, i))
+            if jobHash[i]['protocol'] == 'scp':
+                p = Process(target=ScpSpawn, args=(q, i))
+            p.start()
+            proc.append(p)
+            cue.append(q)
+        for q in cue:
+            data = q.get()
+            #print(data)
+            log.write(datetime.datetime.isoformat(datetime.datetime.now()) + ' ' + data[0] + ' - ' + data[1]  + '\n')
+        for p in proc:
+            p.join()
 
-    for i in DirList:
-        S.sendline('cd /usr/local/flatarc/backups/' + i)
-        S.expect('\$')
-        DisplayText(S.before, S.after)
+        log.close()
 
-        S.sendline('git config user.name "flatarc"')
-        S.expect('\$')
-
-        S.sendline('git config user.email "flatarc@local.net"')
-        S.expect('\$')
-
-        S.sendline('git add *')
+        time.sleep(2)
+        S = pexpect.spawn('bash')
         S.expect('\$')
 
-        S.sendline('git commit -a -m "courtesy of flatarc!"')
-        S.expect('\$')
-        DisplayText(S.before, S.after)
+        for i in dirSet:
+            S.sendline('cd /usr/local/flatarc/backups/' + i)
+            S.expect('\$')
+            DisplayText(S.before, S.after)
 
-    S.sendline('exit')
-    #print('#################### Zulu = ' + str(Zulu) + ' ####################################')
-    Timing.enter(3600, 1, Runner, (Zulu,))
+            S.sendline('git config user.name "flatarc"')
+            S.expect('\$')
 
-### Main Program ########################################
+            S.sendline('git config user.email "flatarc@local.net"')
+            S.expect('\$')
 
-Zulu = -1 
-Timing = sched.scheduler(time.time, time.sleep)
-Timing.enter(5, 1, Runner, (Zulu,))
-Timing.run()
+            S.sendline('git add *')
+            S.expect('\$')
+
+            S.sendline('git commit -a -m "courtesy of flatarc!"')
+            S.expect('\$')
+            DisplayText(S.before, S.after)
+
+        S.sendline('exit')
+        S.close()
+
+        lastRunHour = datetime.datetime.now().hour
