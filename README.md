@@ -1,3 +1,6 @@
+This Branch is for Version 2
+Version 2 is not yet fully functional.  When Version 2 is complete it will be merged into the master branch.
+
 # FlatArc
 A utility that automatically archives flat configuration files such as those found on network devices.
 
