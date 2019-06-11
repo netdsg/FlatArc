@@ -26,7 +26,6 @@ def getAuthClassHash():
         for c in ourHash:
             with open(('/usr/local/flatarc/auth_class_' + c + '.flatarc'), 'rb') as inbound:
                 cipherPass = inbound.read()
-            #print('working!')
             ourHash[c]['pass'] = bytes.decode(decrypt(EVar, cipherPass))
     return ourHash
 
@@ -35,8 +34,8 @@ def DisplayText(VAR, VAR2):
     bZ = (VAR + VAR2)
     Z = bytes.decode(bZ)
     A = Z.splitlines()
-    for i in A:
-        print(i)
+    #for i in A:
+    #    print(i)
 
 def ScpSpawn(data, jobName):
 
@@ -69,16 +68,13 @@ def ScpSpawn(data, jobName):
         ReturnData = (jobName, 'Failed')
         data.put(ReturnData)
         S.close()
-        print(sys.exc_info())
+        #print(sys.exc_info())
         pass
 
 def CiscoSpawn(data, jobName):
     try:
         UserName = authHash[jobHash[jobName]['class']]['user']
         Password = authHash[jobHash[jobName]['class']]['pass']
-        ### fix prompt matching!!!
-        #prompt = (DeviceData[0] + '#')
-        ### we are assuming we are logged in at the proper privilege leve for 'show run'
         prompt = '#'
         S = pexpect.spawn('ssh -o StrictHostKeyChecking=no ' + UserName + '@' + jobHash[i]['ip']) 
         S.expect('word:')
@@ -106,7 +102,7 @@ def CiscoSpawn(data, jobName):
         ReturnData = (jobName[0], 'Failed')
         data.put(ReturnData)
         S.close()
-        print(sys.exc_info())
+        #print(sys.exc_info())
         pass
 
 def JunosSpawn(data, jobName):
@@ -137,7 +133,7 @@ def JunosSpawn(data, jobName):
         ReturnData = (jobName, 'Failed')
         data.put(ReturnData)
         S.close()
-        print(sys.exc_info())
+        #print(sys.exc_info())
         pass
 
 def WriteFile(Content, jobName):
@@ -210,7 +206,7 @@ while True:
             S.sendline('git config user.name "flatarc"')
             S.expect('\$')
 
-            S.sendline('git config user.email "flatarc@local.net"')
+            S.sendline('git config user.email "flatarc@local.local"')
             S.expect('\$')
 
             S.sendline('git add *')
