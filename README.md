@@ -9,7 +9,8 @@ The administator uses flatarcManage.py to launch a CLI based management program.
 
 The backup directories will be found in /usr/local/flatarc/backups/
 
-Currently supported backups (Please open an issue if you'd like to see others):
+Currently supported running configuration backups (Please open an issue if you'd like to see others):
+- VyOS
 - Cisco IOS
 - JUNOS
 - Flat files that can be retrieved via SCP.
