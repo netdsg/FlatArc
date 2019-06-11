@@ -229,7 +229,7 @@ def addJob():
         deviceHash['ip'] = input('Enter the IP Address or DNS name of the backup target: ')
         deviceHash['protocol'] = input('Enter the access protocol (ssh, scp): ')
         if deviceHash['protocol'] == 'ssh':
-            deviceHash['syntax'] = input('Enter the device syntax (cisco, junos): ')
+            deviceHash['syntax'] = input('Enter the device syntax (cisco, junos, vyos): ')
         else:
             deviceHash['file'] = input('Enter full path to file to backup: ')
         deviceHash['interval'] = input('Enter the backup interval in hours: ')

@@ -136,6 +136,37 @@ def JunosSpawn(data, jobName):
         #print(sys.exc_info())
         pass
 
+def vyosSpawn(data, jobName):
+    try:
+        UserName = authHash[jobHash[jobName]['class']]['user']
+        Password = authHash[jobHash[jobName]['class']]['pass']
+
+        prompt = (':~\$')
+        S = pexpect.spawn('ssh -o StrictHostKeyChecking=no ' + UserName + '@' + jobHash[jobName]['ip'])
+        S.expect('word:')
+        DisplayText(S.before, S.after)
+
+        S.sendline(Password)
+        S.expect(prompt)
+        DisplayText(S.before, S.after)
+
+        S.sendline('show configuration commands | no-more')
+        S.expect(prompt)
+        Result = S.before
+        DisplayText(S.before, S.after)
+
+        S.sendline('exit')
+        S.close()
+        WriteFile(Result, jobName)
+        ReturnData = (jobName, 'Success')
+        data.put(ReturnData)
+    except:
+        ReturnData = (jobName, 'Failed')
+        data.put(ReturnData)
+        S.close()
+        #print(sys.exc_info())
+        pass
+
 def WriteFile(Content, jobName):
     cList = bytes.decode(Content).splitlines()
     ConfigFile = open(('/usr/local/flatarc/backups/' + jobHash[jobName]['dir'] +'/' + jobName), 'w')
@@ -180,6 +211,8 @@ while True:
                     p = Process(target=CiscoSpawn, args=(q, i))
                 elif jobHash[i]['syntax'] == 'junos':
                     p = Process(target=JunosSpawn, args=(q, i))
+                elif jobHash[i]['syntax'] == 'vyos':
+                    p = Process(target=vyosSpawn, args=(q, i))
             if jobHash[i]['protocol'] == 'scp':
                 p = Process(target=ScpSpawn, args=(q, i))
             p.start()
