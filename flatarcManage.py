@@ -22,7 +22,7 @@ def cypherHash(authClassHash, option):
 
 def writeAuthClassHash():
     for c in authClassHash:
-        print('working!')
+        print('encrypting!')
         cipherPass = encrypt(EVar, authClassHash[c]['pass'])
         with open('/usr/local/flatarc/auth_class_' + c + '.flatarc', 'wb') as output:
             output.write(cipherPass)
@@ -39,7 +39,7 @@ def getAuthClassHash():
         for c in ourHash:
             with open(('/usr/local/flatarc/auth_class_' + c + '.flatarc'), 'rb') as inbound:
                 cipherPass = inbound.read()
-            print('working!')
+            print('decrypting!')
             ourHash[c]['pass'] = bytes.decode(decrypt(EVar, cipherPass))
     return ourHash
 

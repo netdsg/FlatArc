@@ -109,15 +109,13 @@ def CiscoSpawn(data, jobName):
         print(sys.exc_info())
         pass
 
-def JunosSpawn(data, DeviceData):
+def JunosSpawn(data, jobName):
     try:
-        for i in PlainClassList:
-            if DeviceData[6] == i[0]:
-                UserName = i[1]
-                Password = i[2]
-                break
-        prompt = (DeviceData[0] + '>')
-        S = pexpect.spawn('ssh -o StrictHostKeyChecking=no ' + UserName + '@' + DeviceData[1])
+        UserName = authHash[jobHash[jobName]['class']]['user']
+        Password = authHash[jobHash[jobName]['class']]['pass']
+
+        prompt = (UserName + '>')
+        S = pexpect.spawn('ssh -o StrictHostKeyChecking=no ' + UserName + '@' + jobHash[jobName]['ip'])
         S.expect('word:')
         DisplayText(S.before, S.after)
 
@@ -132,11 +130,11 @@ def JunosSpawn(data, DeviceData):
 
         S.sendline('exit')
         S.close()
-        WriteFile(Result, DeviceData)
-        ReturnData = (DeviceData[0], 'Success')
+        WriteFile(Result, jobName)
+        ReturnData = (jobName, 'Success')
         data.put(ReturnData)
     except:
-        ReturnData = (DeviceData[0], 'Failed')
+        ReturnData = (jobName, 'Failed')
         data.put(ReturnData)
         S.close()
         print(sys.exc_info())
@@ -165,7 +163,7 @@ lastRunHour = 'null'
 
 while True:
     if lastRunHour == datetime.datetime.now().hour:
-        time.sleep(60)
+        time.sleep(600)
     else:
         jobHash = ReadTargets()
         authHash = getAuthClassHash()
