@@ -49,6 +49,6 @@ As user flatarc do the following:
 ### Make flatarc systemd service ####
 As root do the following:
 
-cp flatarc.service /ect/systemd/system/.
-systemctl enable flatarc
-systemctl start flatarc
+    cp flatarc.service /ect/systemd/system/.
+    systemctl enable flatarc
+    systemctl start flatarc
