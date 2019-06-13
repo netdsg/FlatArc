@@ -132,3 +132,56 @@ As root do the following:
 	99 - Exit
 
 	Please enter your selection: 99
+## What To Look For ##
+Look for job success/failures in /usr/local/flatarc/flatarc_log.txt
+
+Look for the backup job files in /usr/local/flatarc/backups/<backup dir>
+	
+Use git commands to see what's changed.
+
+	flatarc@flatarc:/usr/local/flatarc/backups/lab$ git log R1
+	commit 5b0ee9f2c5a44fcc0231a30db6d6ba6032f0ea28
+	Author: flatarc <flatarc@local.local>
+	Date:   Thu Jun 13 17:04:41 2019 +0900
+
+    		courtesy of flatarc!
+
+	commit daa3c47e93e8d52575311956248a889d3213a9b7
+	Author: flatarc <flatarc@local.local>
+	Date:   Wed Jun 12 14:08:07 2019 +0900
+
+    		courtesy of flatarc!
+
+	commit 63b2362a3180c0ed057a211a278ce48e85dd8bdd
+	Author: flatarc <flatarc@local.local>
+	Date:   Wed Jun 12 11:07:23 2019 +0900
+
+    		courtesy of flatarc!
+
+
+	flatarc@flatarc:/usr/local/flatarc/backups/lab$ git diff daa3c47e93e8d52575311956248a889d3213a9b7 			5b0ee9f2c5a44fcc0231a30db6d6ba6032f0ea28
+	diff --git a/R1 b/R1
+	index b43ec75..5c4418b 100644
+	--- a/R1
+	+++ b/R1
+	@@ -1,9 +1,9 @@
+ 	show run
+ 	Building configuration...
+ 
+	-Current configuration : 8926 bytes
+	+Current configuration : 8936 bytes
+ 	!
+	-! Last configuration change at 04:32:50 UTC Wed Jun 12 2019 by hero
+	+! Last configuration change at 07:36:21 UTC Thu Jun 13 2019 by hero
+ 	!
+ 	version 12.2
+ 	service timestamps debug datetime msec
+	@@ -159,6 +159,7 @@ interface FastEthernet1/1
+  	ip address 10.1.14.1 255.255.255.0
+  	ip nat inside
+  	ip flow ingress
+	+ shutdown
+  	speed auto
+  	duplex auto
+ 	!
+
