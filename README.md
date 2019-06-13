@@ -24,8 +24,8 @@ Python3 Module Requirements:
 - simple-crypt
 
 ## Installation instructions: ##
-
-Unbuntu example:
+### Install FlatArc Scripts ###
+Unbuntu/Debian example:
 
 As root do the following:
 
@@ -46,4 +46,9 @@ As user flatarc do the following:
     chmod +x flatarc*
     mkdir /usr/local/flatarc backups
 
+### Make flatarc systemd service ####
+As root do the following:
 
+cp flatarc.service /ect/systemd/system/.
+systemctl enable flatarc
+systemctl start flatarc
