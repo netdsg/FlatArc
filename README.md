@@ -159,7 +159,7 @@ Use git commands to see what's changed.
     		courtesy of flatarc!
 
 
-	flatarc@flatarc:/usr/local/flatarc/backups/lab$ git diff daa3c47e93e8d52575311956248a889d3213a9b7 			5b0ee9f2c5a44fcc0231a30db6d6ba6032f0ea28
+	flatarc@flatarc:/usr/local/flatarc/backups/lab$ git diff daa3c47e93e8d52575311956248a889d3213a9b7 5b0ee9f2c5a44fcc0231a30db6d6ba6032f0ea28
 	diff --git a/R1 b/R1
 	index b43ec75..5c4418b 100644
 	--- a/R1
