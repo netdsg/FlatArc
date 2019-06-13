@@ -41,9 +41,6 @@ As root do the following:
     mkdir /usr/local/flatarc
     chown flatarc:flatarc /usr/local/flatarc
 
-    cp flatarcd /etc/init.d/.
-    chmod +x /etc/init.d/flatarcd
-
 As user flatarc do the following:
 
     cp flatarc.py /usr/local/flatarc/.
@@ -51,6 +48,4 @@ As user flatarc do the following:
     chmod +x flatarc*
     mkdir /usr/local/flatarc backups
 
-As root start the service:
 
-    /etc/init.d/flatarcd start
