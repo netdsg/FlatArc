@@ -52,3 +52,83 @@ As root do the following:
     cp flatarc.service /ect/systemd/system/.
     systemctl enable flatarc
     systemctl start flatarc
+## Usage Example ##
+	flatarc@deb-vm2:/usr/local/flatarc$ ./flatarcManage.py
+
+	Flat Configuration Archiver - FlatArc
+
+	Welcome to FlatArc!
+
+	This is the FlatArc Managment tool.
+
+	1 - Authentication Class management
+
+	2 - Add backup job.
+	3 - Edit/Delete backup job
+	4 - View backup jobs
+
+	99 - Exit
+
+	Please enter your selection: 1
+
+
+	1 - Display all Authenticaiton Classes
+	2 - Display a specific Authentication Class
+	3 - Add an Authentication class
+	4 - Remove an Authentication class
+	5 - Edit an Authentication class
+
+	Please enter the option number: 3
+
+	Enter Authentication Class name: hero
+	Enter username: hero
+	Enter Password: hero
+	encrypting!
+
+	hero Has been added.
+	Press enter to continue.
+
+	1 - Authentication Class management
+
+	2 - Add backup job.
+	3 - Edit/Delete backup job
+	4 - View backup jobs
+
+	99 - Exit
+
+
+	1 - Authentication Class management
+
+	2 - Add backup job.
+	3 - Edit/Delete backup job
+	4 - View backup jobs
+
+	99 - Exit
+
+	Please enter your selection: 2
+
+
+	Backup Job Name - This name is only used to manage backup jobs.
+	Job Name: r1
+	Enter the IP Address or DNS name of the backup target: 10.10.1.1
+	Enter the access protocol (ssh, scp): ssh
+	Enter the device syntax (cisco, junos, vyos): cisco
+	Enter the backup interval in hours: 12
+	Enter the backup directory: lab
+	Enter the Authentication Class name: hero
+	Enter the device status (up, down): up
+	Initialized empty Git repository in /usr/local/flatarc/backups/lab/.git/
+
+	Backup job r1 has been added.
+
+	Press enter to continue.
+
+	1 - Authentication Class management
+
+	2 - Add backup job.
+	3 - Edit/Delete backup job
+	4 - View backup jobs
+
+	99 - Exit
+
+	Please enter your selection: 99
