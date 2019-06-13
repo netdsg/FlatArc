@@ -135,7 +135,7 @@ As root do the following:
 ## What To Look For ##
 Look for job success/failures in /usr/local/flatarc/flatarc_log.txt
 
-Look for the backup job files in /usr/local/flatarc/backups/<backup dir>
+Look for the backup job files in /usr/local/flatarc/backups/\<backup dir\>
 	
 Use git commands to see what's changed.
 
