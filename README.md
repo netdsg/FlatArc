@@ -23,8 +23,6 @@ Python3 Module Requirements:
 - pexepct
 - simple-crypt
 
-#################################################
-
 ## Installation instructions: ##
 
 Unbuntu example:
