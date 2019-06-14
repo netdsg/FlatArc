@@ -34,8 +34,8 @@ def DisplayText(VAR, VAR2):
     bZ = (VAR + VAR2)
     Z = bytes.decode(bZ)
     A = Z.splitlines()
-    #for i in A:
-    #    print(i)
+#    for i in A:
+#        print(i)
 
 def ScpSpawn(data, jobName):
 
@@ -65,10 +65,10 @@ def ScpSpawn(data, jobName):
         ReturnData = (jobName, Status)
         data.put(ReturnData)
     except:
-        ReturnData = (jobName, 'Failed')
+        ourError = sys.exc_info()
+        ReturnData = (jobName, ('Failed' + str(ourError)))
         data.put(ReturnData)
         S.close()
-        #print(sys.exc_info())
         pass
 
 def CiscoSpawn(data, jobName):
@@ -99,10 +99,10 @@ def CiscoSpawn(data, jobName):
         ReturnData = (jobName, 'Success')
         data.put(ReturnData)
     except:
-        ReturnData = (jobName[0], 'Failed')
+        ourError = sys.exc_info()
+        ReturnData = (jobName, ('Failed' + str(ourError)))
         data.put(ReturnData)
         S.close()
-        #print(sys.exc_info())
         pass
 
 def JunosSpawn(data, jobName):
@@ -130,10 +130,10 @@ def JunosSpawn(data, jobName):
         ReturnData = (jobName, 'Success')
         data.put(ReturnData)
     except:
-        ReturnData = (jobName, 'Failed')
+        ourError = sys.exc_info()
+        ReturnData = (jobName, ('Failed' + str(ourError)))
         data.put(ReturnData)
         S.close()
-        #print(sys.exc_info())
         pass
 
 def vyosSpawn(data, jobName):
@@ -161,10 +161,10 @@ def vyosSpawn(data, jobName):
         ReturnData = (jobName, 'Success')
         data.put(ReturnData)
     except:
-        ReturnData = (jobName, 'Failed')
+        ourError = sys.exc_info()
+        ReturnData = (jobName, ('Failed' + str(ourError)))
         data.put(ReturnData)
         S.close()
-        #print(sys.exc_info())
         pass
 
 def WriteFile(Content, jobName):
