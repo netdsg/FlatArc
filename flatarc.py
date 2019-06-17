@@ -46,7 +46,7 @@ def ScpSpawn(data, jobName):
         S = pexpect.spawn('bash')
         S.expect('\$')
 
-        S.sendline('scp -o StrictHostKeyChecking=no ' + UserName + '@' + jobHash[jobName]['ip'] + ':' + jobHash[jobName]['file'] + ' /usr/local/flatarc/backups/' + jobHash[jobName]['dir'] + '/' + jobHash[jobName]['file'].split('/')[-1] + '.' + jobName)
+        S.sendline('scp -o StrictHostKeyChecking=no -r ' + UserName + '@' + jobHash[jobName]['ip'] + ':' + jobHash[jobName]['file'] + ' /usr/local/flatarc/backups/' + jobHash[jobName]['dir'] + '/' + jobHash[jobName]['file'].split('/')[-1] + '.' + jobName)
         S.expect('word:')
         DisplayText(S.before, S.after)
 
