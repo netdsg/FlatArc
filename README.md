@@ -13,7 +13,7 @@ Currently supported running configuration backups (Please open an issue if you'd
 - VyOS
 - Cisco IOS
 - JUNOS
-- Flat files that can be retrieved via SCP.
+- Files or directories that can be retrieved via SCP.
 
 Application Requirements:
 - Python3
