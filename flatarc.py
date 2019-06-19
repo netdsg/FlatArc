@@ -187,11 +187,16 @@ if CurUser != 'flatarc':
     sys.exit()
 
 lastRunHour = 'null'
-
+lastSeenHour = 'null'
+currentHour = datetime.datetime.now().hour - 1
+if currentHour == -1:
+    currentHour = 23
 while True:
-    if lastRunHour == datetime.datetime.now().hour:
+    #if lastRunHour == currentHour:
+    if lastSeenHour == datetime.datetime.now().hour:
         time.sleep(600)
     else:
+        currentHour += 1
         jobHash = ReadTargets()
         authHash = getAuthClassHash()
         log = open('/usr/local/flatarc/flatarc_log.txt', 'a')
@@ -202,7 +207,7 @@ while True:
         for i in jobHash:
             if jobHash[i]['status'] != 'up':
                 continue
-            if datetime.datetime.now().hour % int(jobHash[i]['interval']) != 0:
+            if currentHour % int(jobHash[i]['interval']) != 0 and lastSeenHour != 'null':
                 continue
             dirSet.add(jobHash[i]['dir'])
             q = Queue()
@@ -224,7 +229,7 @@ while True:
             log.write(datetime.datetime.isoformat(datetime.datetime.now()) + ' ' + data[0] + ' - ' + data[1]  + '\n')
         for p in proc:
             p.join()
-
+        #log.write(datetime.datetime.isoformat(datetime.datetime.now()) + ' - current hour: ' + str(currentHour) + ' last run hour: ' + str(lastSeenHour) + '\n')
         log.close()
 
         time.sleep(2)
@@ -252,4 +257,5 @@ while True:
         S.sendline('exit')
         S.close()
 
-        lastRunHour = datetime.datetime.now().hour
+        #lastRunHour = currentHour
+        lastSeenHour = datetime.datetime.now().hour
