@@ -505,6 +505,11 @@ if CurUser != 'flatarc':
     print('Exiting...')
     sys.exit()
 
+if not os.path.isdir('/usr/local/flatarc/json'):
+    os.makedirs('/usr/local/flatarc/json')
+if not os.path.isdir('/usr/local/flatarc/auth_class'):
+    os.makedirs('/usr/local/flatarc/auth_class')
+
 try:
     authClassHash = getAuthClassHash()
 except:
