@@ -13,7 +13,8 @@ ClassList = None
 
 def ReadTargets():
     try:
-        with open('/usr/local/flatarc/flatarcDeviceData.json') as ourfile:
+        #with open('/usr/local/flatarc/flatarcDeviceData.json') as ourfile:
+        with open('/usr/local/flatarc/json/backupJobs.json') as ourfile:
             jobHash = json.load(ourfile)
     except:
         jobHash = {}
@@ -21,10 +22,10 @@ def ReadTargets():
     return jobHash
 
 def getAuthClassHash():
-    with open('/usr/local/flatarc/flatarcClass.json') as ourFile:
+    with open('/usr/local/flatarc/json/flatarcClass.json') as ourFile:
         ourHash = json.load(ourFile)
         for c in ourHash:
-            with open(('/usr/local/flatarc/auth_class_' + c + '.flatarc'), 'rb') as inbound:
+            with open(('/usr/local/flatarc/auth_class/auth_class_' + c + '.flatarc'), 'rb') as inbound:
                 cipherPass = inbound.read()
             ourHash[c]['pass'] = bytes.decode(decrypt(EVar, cipherPass))
     return ourHash
@@ -198,9 +199,13 @@ while True:
     else:
         currentHour += 1
         jobHash = ReadTargets()
-        authHash = getAuthClassHash()
-        log = open('/usr/local/flatarc/flatarc_log.txt', 'a')
-        
+        log = open('/usr/local/flatarc/flatarc.log', 'a')
+        try:
+            authHash = getAuthClassHash()
+        except:
+            log.write(datetime.datetime.isoformat(datetime.datetime.now()) + ' No authentication credentials found; will try again in an hour\n')
+            log.close()
+            pass
         dirSet = set()
         proc = []
         cue = []
@@ -229,7 +234,6 @@ while True:
             log.write(datetime.datetime.isoformat(datetime.datetime.now()) + ' ' + data[0] + ' - ' + data[1]  + '\n')
         for p in proc:
             p.join()
-        #log.write(datetime.datetime.isoformat(datetime.datetime.now()) + ' - current hour: ' + str(currentHour) + ' last run hour: ' + str(lastSeenHour) + '\n')
         log.close()
 
         time.sleep(2)

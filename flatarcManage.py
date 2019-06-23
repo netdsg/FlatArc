@@ -25,20 +25,20 @@ def writeAuthClassHash():
     for c in authClassHash:
         print('encrypting!')
         cipherPass = encrypt(EVar, authClassHash[c]['pass'])
-        with open('/usr/local/flatarc/auth_class_' + c + '.flatarc', 'wb') as output:
+        with open('/usr/local/flatarc/auth_class/auth_class_' + c + '.flatarc', 'wb') as output:
             output.write(cipherPass)
         ourHash = {}
         for i in authClassHash:
             ourHash[i] = {}
             ourHash[i]['user'] = authClassHash[i]['user']
-    with open('/usr/local/flatarc/flatarcClass.json', 'w') as ourfile:
+    with open('/usr/local/flatarc/json/flatarcClass.json', 'w') as ourfile:
         json.dump(ourHash, ourfile)
 
 def getAuthClassHash():
-    with open('/usr/local/flatarc/flatarcClass.json') as ourFile:
+    with open('/usr/local/flatarc/json/flatarcClass.json') as ourFile:
         ourHash = json.load(ourFile)
         for c in ourHash:
-            with open(('/usr/local/flatarc/auth_class_' + c + '.flatarc'), 'rb') as inbound:
+            with open(('/usr/local/flatarc/auth_class/auth_class_' + c + '.flatarc'), 'rb') as inbound:
                 cipherPass = inbound.read()
             print('decrypting!')
             ourHash[c]['pass'] = bytes.decode(decrypt(EVar, cipherPass))
@@ -120,7 +120,7 @@ def RmAccount():
         Delta = input('yes/no: ')
         if Delta == 'yes':
             del authClassHash[Account]
-            os.remove('/usr/local/flatarc/auth_class_' + Account + '.flatarc')
+            os.remove('/usr/local/flatarc/auth_class/auth_class_' + Account + '.flatarc')
             writeAuthClassHash()
             print('This Authentication Class has been removed.')
             input('press enter to continue.')
@@ -149,7 +149,7 @@ def EditAccount():
             NewAccount = input('Enter new class name: ')
             authClassHash[NewAccount] = authClassHash[Account]
             del authClassHash[Account]
-            os.remove('/usr/local/flatarc/auth_class_' + Account + '.flatarc')
+            os.remove('/usr/local/flatarc/auth_class/auth_class_' + Account + '.flatarc')
             Account = NewAccount
         if Option == '2':
             NewUser = input('Enter new username: ')
@@ -349,11 +349,13 @@ def WriteFile(Content, jobName):
 #################################################
 
 def WriteDeviceData():
-    with open('/usr/local/flatarc/flatarcDeviceData.json', 'w') as outfile:
+    #with open('/usr/local/flatarc/flatarcDeviceData.json', 'w') as outfile:
+    with open('/usr/local/flatarc/json/backupJobs.json', 'w') as outfile:
         json.dump(masterJobHash, outfile)
         
 def GetDeviceData():
-    with open('/usr/local/flatarc/flatarcDeviceData.json') as ourfile:
+    #with open('/usr/local/flatarc/flatarcDeviceData.json') as ourfile:
+    with open('/usr/local/flatarc/json/backupJobs.json') as ourfile:
         masterJobHash = json.load(ourfile)
     return masterJobHash
 
