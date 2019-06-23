@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
-import os, sys, pprint, getpass, json
+#import os, sys, pprint, getpass, json
+import pexpect, time, sys, os, datetime, re, json, getpass
 from simplecrypt import *
 
 ############################################
@@ -165,6 +166,183 @@ def EditAccount():
         input('Press enter to continue.')
     else:
         print('Account not found.')
+
+#################################################
+### Run Job Functions
+#################################################
+
+def runBackupJob():
+    jobName = input('Enter backup job name: ')
+    for j in masterJobHash:
+        if jobName not in masterJobHash:
+            print('Job not found.')
+            print()
+            #input('Press enter to continue')
+            break
+        else:
+            if masterJobHash[jobName]['protocol'] == 'scp':
+                ScpSpawn(jobName)
+                break
+            elif masterJobHash[jobName]['protocol'] == 'ssh':
+                if masterJobHash[jobName]['syntax'] == 'cisco':
+                    CiscoSpawn(jobName)
+                    break
+                elif masterJobHash[jobName]['syntax'] == 'vyos':
+                    vyosSpawn(jobName)
+                    break
+                elif masterJobHash[jobName]['syntax'] == 'junos':
+                    JunosSpawn(jobName)
+                    break
+    input('\nPress Enter to continue...')
+        
+def DisplayText(VAR, VAR2):
+    bZ = (VAR + VAR2)
+    Z = bytes.decode(bZ)
+    A = Z.splitlines()
+    for i in A:
+        if 'Could not create directory' not in i and 'Failed to add the host to the list of known hosts' not in i:
+            print(i)
+
+def ScpSpawn(jobName):
+    try:
+        UserName = authClassHash[masterJobHash[jobName]['class']]['user']
+        Password = authClassHash[masterJobHash[jobName]['class']]['pass']
+
+        S = pexpect.spawn('bash')
+        S.expect('\$')
+
+        S.sendline('scp -o StrictHostKeyChecking=no -r ' + UserName + '@' + masterJobHash[jobName]['ip'] + ':' + masterJobHash[jobName]['file'] + ' /usr/local/flatarc/backups/' + masterJobHash[jobName]['dir'] + '/' + masterJobHash[jobName]['file'].split('/')[-1] + '.' + jobName)
+        S.expect('word:')
+        DisplayText(S.before, S.after)
+
+        S.sendline(Password)
+        S.expect('\$')
+        DisplayText(S.before, S.after)
+
+        EvalStatus = bytes.decode(S.before)
+        if 'No such file or directory' in EvalStatus:
+            print('Job failed - File could not be found.')
+        else:
+            Status = 'Success'
+            print()
+            print('Job was successful - find file at /usr/local/flatarc/backups/' + masterJobHash[jobName]['dir'] + '/' + masterJobHash[jobName]['file'].split('/')[-1] + '.' + jobName)
+
+        S.close()
+        
+        
+    except:
+        ourError = sys.exc_info()
+        print(str(ourError))
+        print()
+        print('Job Failed - check error message above')
+        S.close()
+        pass
+
+def CiscoSpawn(jobName):
+    try:
+        UserName = authClassHash[masterJobHash[jobName]['class']]['user']
+        Password = authClassHash[masterJobHash[jobName]['class']]['pass']
+        prompt = '#'
+        S = pexpect.spawn('ssh -o StrictHostKeyChecking=no ' + UserName + '@' + masterJobHash[jobName]['ip']) 
+        S.expect('word:')
+        DisplayText(S.before, S.after)
+
+        S.sendline(Password)
+        S.expect(prompt)
+        DisplayText(S.before, S.after)
+
+        S.sendline('term len 0')
+        S.expect(prompt)
+        DisplayText(S.before, S.after)
+
+        S.sendline('show run')
+        S.expect(prompt)
+        Result = S.before
+        DisplayText(S.before, S.after)
+
+        S.sendline('exit')
+        S.close()
+        WriteFile(Result, jobName)
+        print()
+        print('Job was successful! - find the file at /usr/local/flatar/backups/' +  masterJobHash[jobName]['dir'] +'/' + jobName)
+    except:
+        ourError = sys.exc_info()
+        print(str(ourError))
+        print()
+        print('Job Failed - check error message above')
+        S.close()
+        pass
+
+def JunosSpawn(jobName):
+    try:
+        UserName = authClassHash[masterJobHash[jobName]['class']]['user']
+        Password = authClassHash[masterJobHash[jobName]['class']]['pass']
+
+        prompt = (UserName + '>')
+        S = pexpect.spawn('ssh -o StrictHostKeyChecking=no ' + UserName + '@' + masterJobHash[jobName]['ip'])
+        S.expect('word:')
+        DisplayText(S.before, S.after)
+
+        S.sendline(Password)
+        S.expect(prompt)
+        DisplayText(S.before, S.after)
+
+        S.sendline('show configuration | display set | no-more')
+        S.expect(prompt)
+        Result = S.before
+        DisplayText(S.before, S.after)
+
+        S.sendline('exit')
+        S.close()
+        WriteFile(Result, jobName)
+        print()
+        print('Job was successful! - find the file at /usr/local/flatar/backups/' +  masterJobHash[jobName]['dir'] +'/' + jobName)
+    except:
+        ourError = sys.exc_info()
+        print(str(ourError))
+        print()
+        print('Job Failed - check error message above')
+        S.close()
+        pass
+
+def vyosSpawn(jobName):
+    try:
+        UserName = authClassHash[masterJobHash[jobName]['class']]['user']
+        Password = authClassHash[masterJobHash[jobName]['class']]['pass']
+
+        prompt = (':~\$')
+        S = pexpect.spawn('ssh -o StrictHostKeyChecking=no ' + UserName + '@' + masterJobHash[jobName]['ip'])
+        S.expect('word:')
+        DisplayText(S.before, S.after)
+
+        S.sendline(Password)
+        S.expect(prompt)
+        DisplayText(S.before, S.after)
+
+        S.sendline('show configuration commands | no-more')
+        S.expect(prompt)
+        Result = S.before
+        DisplayText(S.before, S.after)
+
+        S.sendline('exit')
+        S.close()
+        WriteFile(Result, jobName)
+        print()
+        print('Job was successful! - find the file at /usr/local/flatar/backups/' +  masterJobHash[jobName]['dir'] +'/' + jobName)
+    except:
+        ourError = sys.exc_info()
+        print(str(ourError))
+        print()
+        print('Job Failed - check error message above')
+        S.close()
+        pass
+
+def WriteFile(Content, jobName):
+    cList = bytes.decode(Content).splitlines()
+    ConfigFile = open(('/usr/local/flatarc/backups/' + masterJobHash[jobName]['dir'] +'/' + jobName), 'w')
+    for i in cList:
+        ConfigFile.write(i + '\n')
+    ConfigFile.close()
 
 #################################################
 ### Device Mangement
@@ -350,6 +528,7 @@ while True:
     print('2 - Add backup job.')
     print('3 - Edit/Delete backup job')
     print('4 - View backup jobs')
+    print('5 - Run a backup job')
     print()
     print('99 - Exit')
     print()
@@ -366,3 +545,5 @@ while True:
         editJobs()
     if Selection == '4':
         viewAll()
+    if Selection == '5':
+        runBackupJob()
