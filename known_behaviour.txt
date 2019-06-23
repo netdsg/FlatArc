@@ -1,0 +1,1 @@
+Deleting a job does not delete the backup files
