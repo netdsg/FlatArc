@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import pexpect, time, sys, os, datetime, re, sched, json, getpass
+import pexpect, time, sys, os, datetime, re, sched, json, getpass, subprocess
 from multiprocessing import Process, Queue
 from simplecrypt import *
 
@@ -27,9 +27,13 @@ def getAuthClassHash():
         for c in ourHash:
             with open(('/usr/local/flatarc/auth_class/auth_class_' + c + '.flatarc'), 'rb') as inbound:
                 cipherPass = inbound.read()
+            #print('decrypting!')
             ourHash[c]['pass'] = bytes.decode(decrypt(EVar, cipherPass))
+            with open(('/usr/local/flatarc/auth_class/auth_class_preshared' + c + '.flatarc'), 'rb') as inbound:
+                cipherPreShare = inbound.read()
+            #print('decrypting!')
+            ourHash[c]['preshare'] = bytes.decode(decrypt(EVar, cipherPreShare))
     return ourHash
-
 
 def DisplayText(VAR, VAR2):
     bZ = (VAR + VAR2)
@@ -47,13 +51,26 @@ def ScpSpawn(data, jobName):
         S = pexpect.spawn('bash')
         S.expect('\$')
 
-        S.sendline('scp -o StrictHostKeyChecking=no -r ' + UserName + '@' + jobHash[jobName]['ip'] + ':' + jobHash[jobName]['file'] + ' /usr/local/flatarc/backups/' + jobHash[jobName]['dir'] + '/' + jobHash[jobName]['file'].split('/')[-1] + '.' + jobName)
-        S.expect('word:')
-        DisplayText(S.before, S.after)
+        if 'pre' in authHash[jobHash[jobName]['class']]['method']:
+            subprocess.run(['touch', ('/usr/local/flatarc/' + jobName + '.txt')])
+            subprocess.run(['chmod', '600', ('/usr/local/flatarc/' + jobName + '.txt')])
+            with open(('/usr/local/flatarc/' + jobName + '.txt'), 'a') as outFile:
+                outFile.write(authHash[jobHash[jobName]['class']]['preshare'])
+            outFile.close()
+            S.sendline('scp -o StrictHostKeyChecking=no -r -i ' + ('/usr/local/flatarc/' + jobName + '.txt') + ' ' + UserName + '@' + jobHash[jobName]['ip'] + ':' + jobHash[jobName]['file'] + ' /usr/local/flatarc/backups/' + jobHash[jobName]['dir'] + '/' + jobHash[jobName]['file'].split('/')[-1] + '.' + jobName)
+            S.expect('\$')
+            DisplayText(S.before, S.after)
 
-        S.sendline(Password)
-        S.expect('\$')
-        DisplayText(S.before, S.after)
+            os.remove('/usr/local/flatarc/' + jobName + '.txt')
+
+        else:
+            S.sendline('scp -o StrictHostKeyChecking=no -r ' + UserName + '@' + jobHash[jobName]['ip'] + ':' + jobHash[jobName]['file'] + ' /usr/local/flatarc/backups/' + jobHash[jobName]['dir'] + '/' + jobHash[jobName]['file'].split('/')[-1] + '.' + jobName)
+            S.expect('word:')
+            DisplayText(S.before, S.after)
+
+            S.sendline(Password)
+            S.expect('\$')
+            DisplayText(S.before, S.after)
 
         EvalStatus = bytes.decode(S.before)
         if 'No such file or directory' in EvalStatus:
@@ -77,13 +94,27 @@ def CiscoSpawn(data, jobName):
         UserName = authHash[jobHash[jobName]['class']]['user']
         Password = authHash[jobHash[jobName]['class']]['pass']
         prompt = '#'
-        S = pexpect.spawn('ssh -o StrictHostKeyChecking=no ' + UserName + '@' + jobHash[i]['ip']) 
-        S.expect('word:')
-        DisplayText(S.before, S.after)
 
-        S.sendline(Password)
-        S.expect(prompt)
-        DisplayText(S.before, S.after)
+        if 'pre' in authHash[jobHash[jobName]['class']]['method']:
+            subprocess.run(['touch', ('/usr/local/flatarc/' + jobName + '.txt')])
+            subprocess.run(['chmod', '600', ('usr/local/flatarc/' + jobName + '.txt')])
+            with open(('/usr/local/flatarc/' + jobName + '.txt'), 'a') as outFile:
+                outFile.write(authHash[jobHash[jobName]['class']]['preshare'])
+            outFile.close()
+            S = pexpect.spawn('ssh -o StrictHostKeyChecking=no -i ' + ('/usr/local/flatarc/' + jobName + '.txt') + ' ' + UserName + '@' + jobHash[jobName]['ip'])
+            S.expect(prompt)
+            DisplayText(S.before, S.after)
+
+            os.remove('/usr/local/flatarc/' + jobName + '.txt')
+
+        else:
+            S = pexpect.spawn('ssh -o StrictHostKeyChecking=no ' + UserName + '@' + jobHash[i]['ip']) 
+            S.expect('word:')
+            DisplayText(S.before, S.after)
+
+            S.sendline(Password)
+            S.expect(prompt)
+            DisplayText(S.before, S.after)
 
         S.sendline('term len 0')
         S.expect(prompt)
@@ -112,13 +143,27 @@ def JunosSpawn(data, jobName):
         Password = authHash[jobHash[jobName]['class']]['pass']
 
         prompt = (UserName + '>')
-        S = pexpect.spawn('ssh -o StrictHostKeyChecking=no ' + UserName + '@' + jobHash[jobName]['ip'])
-        S.expect('word:')
-        DisplayText(S.before, S.after)
 
-        S.sendline(Password)
-        S.expect(prompt)
-        DisplayText(S.before, S.after)
+        if 'pre' in authHash[jobHash[jobName]['class']]['method']:
+            subprocess.run(['touch', ('/usr/local/flatarc/' + jobName + '.txt')])
+            subprocess.run(['chmod', '600', ('/usr/local/flatarc/' + jobName + '.txt')])
+            with open(('/usr/local/flatarc/' + jobName + '.txt'), 'a') as outFile:
+                outFile.write(authHash[jobHash[jobName]['class']]['preshare'])
+            outFile.close()
+            S = pexpect.spawn('ssh -o StrictHostKeyChecking=no -i ' + ('/usr/local/flatarc/' + jobName + '.txt') + ' ' + UserName + '@' + jobHash[jobName]['ip'])
+            S.expect(prompt)
+            DisplayText(S.before, S.after)
+
+            os.remove('/usr/local/flatarc/' + jobName + '.txt')
+
+        else:
+            S = pexpect.spawn('ssh -o StrictHostKeyChecking=no ' + UserName + '@' + jobHash[jobName]['ip'])
+            S.expect('word:')
+            DisplayText(S.before, S.after)
+
+            S.sendline(Password)
+            S.expect(prompt)
+            DisplayText(S.before, S.after)
 
         S.sendline('show configuration | display set | no-more')
         S.expect(prompt)
@@ -143,13 +188,27 @@ def vyosSpawn(data, jobName):
         Password = authHash[jobHash[jobName]['class']]['pass']
 
         prompt = (':~\$')
-        S = pexpect.spawn('ssh -o StrictHostKeyChecking=no ' + UserName + '@' + jobHash[jobName]['ip'])
-        S.expect('word:')
-        DisplayText(S.before, S.after)
 
-        S.sendline(Password)
-        S.expect(prompt)
-        DisplayText(S.before, S.after)
+        if 'pre' in authHash[jobHash[jobName]['class']]['method']:
+            subprocess.run(['touch', ('/usr/local/flatarc/' + jobName + '.txt')])
+            subprocess.run(['chmod', '600', ('/usr/local/flatarc/' + jobName + '.txt')])
+            with open(('/usr/local/flatarc/' + jobName + '.txt'), 'a') as outFile:
+                outFile.write(authHash[jobHash[jobName]['class']]['preshare'])
+            outFile.close()
+            S = pexpect.spawn('ssh -o StrictHostKeyChecking=no -i ' + ('/usr/local/flatarc/' + jobName + '.txt') + ' ' + UserName + '@' + jobHash[jobName]['ip'])
+            S.expect(prompt)
+            DisplayText(S.before, S.after)
+
+            os.remove('/usr/local/flatarc/' + jobName + '.txt')
+
+        else:
+            S = pexpect.spawn('ssh -o StrictHostKeyChecking=no ' + UserName + '@' + jobHash[jobName]['ip'])
+            S.expect('word:')
+            DisplayText(S.before, S.after)
+
+            S.sendline(Password)
+            S.expect(prompt)
+            DisplayText(S.before, S.after)
 
         S.sendline('show configuration commands | no-more')
         S.expect(prompt)
@@ -193,7 +252,6 @@ currentHour = datetime.datetime.now().hour - 1
 if currentHour == -1:
     currentHour = 23
 while True:
-    #if lastRunHour == currentHour:
     if lastSeenHour == datetime.datetime.now().hour:
         time.sleep(600)
     else:
@@ -261,5 +319,4 @@ while True:
         S.sendline('exit')
         S.close()
 
-        #lastRunHour = currentHour
         lastSeenHour = datetime.datetime.now().hour

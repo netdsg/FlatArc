@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 
-#import os, sys, pprint, getpass, json
-import pexpect, time, sys, os, datetime, re, json, getpass
+import pexpect, time, sys, os, datetime, re, json, getpass, subprocess, pydoc
 from simplecrypt import *
 
 ############################################
@@ -14,25 +13,23 @@ from simplecrypt import *
 
 EVar = 'thisvariablehashesthepasswords'
 
-def cypherHash(authClassHash, option):
-    for c in authClassHash:
-        if option == 'encrypt':
-            authClassHash[c]['pass'] = encrypt(EVar, authClassHash[c]['pass'])
-        else:
-            authClassHash[c]['pass'] = bytes.decode(decrypt(EVar, authClassHash[c]['pass']))
-
 def writeAuthClassHash():
-    for c in authClassHash:
-        print('encrypting!')
-        cipherPass = encrypt(EVar, authClassHash[c]['pass'])
-        with open('/usr/local/flatarc/auth_class/auth_class_' + c + '.flatarc', 'wb') as output:
-            output.write(cipherPass)
-        ourHash = {}
-        for i in authClassHash:
-            ourHash[i] = {}
-            ourHash[i]['user'] = authClassHash[i]['user']
-    with open('/usr/local/flatarc/json/flatarcClass.json', 'w') as ourfile:
-        json.dump(ourHash, ourfile)
+    if authClassHash != {}:
+        for c in authClassHash:
+            print('encrypting!')
+            cipherPass = encrypt(EVar, authClassHash[c]['pass'])
+            with open('/usr/local/flatarc/auth_class/auth_class_' + c + '.flatarc', 'wb') as output:
+                output.write(cipherPass)
+            cipherPreShare = encrypt(EVar, authClassHash[c]['preshare'])
+            with open('/usr/local/flatarc/auth_class/auth_class_preshared' + c + '.flatarc', 'wb') as output:
+                output.write(cipherPreShare)
+            ourHash = {}
+            for i in authClassHash:
+                ourHash[i] = {}
+                ourHash[i]['user'] = authClassHash[i]['user']
+                ourHash[i]['method'] = authClassHash[i]['method']
+        with open('/usr/local/flatarc/json/flatarcClass.json', 'w') as ourfile:
+            json.dump(ourHash, ourfile)
 
 def getAuthClassHash():
     with open('/usr/local/flatarc/json/flatarcClass.json') as ourFile:
@@ -42,6 +39,10 @@ def getAuthClassHash():
                 cipherPass = inbound.read()
             print('decrypting!')
             ourHash[c]['pass'] = bytes.decode(decrypt(EVar, cipherPass))
+            with open(('/usr/local/flatarc/auth_class/auth_class_preshared' + c + '.flatarc'), 'rb') as inbound:
+                cipherPreShare = inbound.read()
+            print('decrypting!')
+            ourHash[c]['preshare'] = bytes.decode(decrypt(EVar, cipherPreShare))
     return ourHash
 
 def DisplayData():
@@ -50,6 +51,7 @@ def DisplayData():
             print()
             print('Account: ' + i)
             print('Username: ' + authClassHash[i]['user'])
+            print('Method: ' + authClassHash[i]['method'])
             print('Password: ' + authClassHash[i]['pass'])
         print()
         input('press enter to continue.')
@@ -87,8 +89,13 @@ def DisplayAccount():
     if Account in authClassHash:
         print('Authentication Class: ' + Account)
         print('Username: ' + authClassHash[Account]['user'])
+        print('Method: ' + authClassHash[Account]['method'])
         print('Password: ' + authClassHash[Account]['pass'])
         print()
+        if 'pre' in authClassHash[Account]['method']:
+            viewKey = input('Would you lke to veiw the pre-shared key (yes,no): ')
+            if 'yes' in viewKey:
+                print(authClassHash[Account]['preshare'])
         input('Press enter to continue.')
     else:
         print('Class not found.')
@@ -97,11 +104,22 @@ def DisplayAccount():
 def AddAccount():
     Account = input('Enter Authentication Class name: ')
     if Account not in authClassHash:
+        preSharedKey = ''
+        PlainPassword = ''
         User = input('Enter username: ')
-        PlainPassword = input('Enter Password: ')
+        method = input('Will this class use password or pre-shared key authentication (password, pre-shared): ')
+        if 'pre' in method:
+            endOfInput = ''
+            print('Enter the pre-shared key and press enter: ')
+            for line in iter(input, endOfInput):
+                preSharedKey += (line + '\n')
+        else:
+            PlainPassword = input('Enter Password: ')
         authClassHash[Account] = {}
         authClassHash[Account]['user'] = User
         authClassHash[Account]['pass'] = PlainPassword
+        authClassHash[Account]['method'] = method
+        authClassHash[Account]['preshare'] = preSharedKey
         writeAuthClassHash()
         print()
         print(Account + ' Has been added.')
@@ -171,6 +189,32 @@ def EditAccount():
 ### Run Job Functions
 #################################################
 
+def gitCommit(tgtDir):
+    print()
+    print('Running git commmit...')
+    S = pexpect.spawn('bash')
+    S.expect('\$')
+
+    S.sendline('cd /usr/local/flatarc/backups/' + tgtDir)
+    S.expect('\$')
+    DisplayText(S.before, S.after)
+
+    S.sendline('git config user.name "flatarc"')
+    S.expect('\$')
+
+    S.sendline('git config user.email "flatarc@local.local"')
+    S.expect('\$')
+
+    S.sendline('git add *')
+    S.expect('\$')
+
+    S.sendline('git commit -a -m "courtesy of flatarc!"')
+    S.expect('\$')
+    DisplayText(S.before, S.after)
+
+    S.sendline('exit')
+    S.close()
+
 def runBackupJob():
     jobName = input('Enter backup job name: ')
     for j in masterJobHash:
@@ -200,7 +244,9 @@ def DisplayText(VAR, VAR2):
     Z = bytes.decode(bZ)
     A = Z.splitlines()
     for i in A:
-        if 'Could not create directory' not in i and 'Failed to add the host to the list of known hosts' not in i:
+        if 'Could not create directory' in i or 'Failed to add the host to the list of known hosts' in i:
+            pass
+        else:
             print(i)
 
 def ScpSpawn(jobName):
@@ -210,25 +256,42 @@ def ScpSpawn(jobName):
 
         S = pexpect.spawn('bash')
         S.expect('\$')
+        
+        if 'pre' in authClassHash[masterJobHash[jobName]['class']]['method']:
+            subprocess.run(['touch', (jobName + '.txt')])
+            subprocess.run(['chmod', '600', (jobName + '.txt')])
+            with open(('/usr/local/flatarc/' + jobName + '.txt'), 'a') as outFile:
+                outFile.write(authClassHash[masterJobHash[jobName]['class']]['preshare'])
+            outFile.close()
+            S.sendline('scp -o StrictHostKeyChecking=no -r -i ' + ('/usr/local/flatarc/' + jobName + '.txt') + ' ' + UserName + '@' + masterJobHash[jobName]['ip'] + ':' + masterJobHash[jobName]['file'] + ' /usr/local/flatarc/backups/' + masterJobHash[jobName]['dir'] + '/' + masterJobHash[jobName]['file'].split('/')[-1] + '.' + jobName)
+            S.expect('\$')
+            DisplayText(S.before, S.after)
 
-        S.sendline('scp -o StrictHostKeyChecking=no -r ' + UserName + '@' + masterJobHash[jobName]['ip'] + ':' + masterJobHash[jobName]['file'] + ' /usr/local/flatarc/backups/' + masterJobHash[jobName]['dir'] + '/' + masterJobHash[jobName]['file'].split('/')[-1] + '.' + jobName)
-        S.expect('word:')
-        DisplayText(S.before, S.after)
+            os.remove('/usr/local/flatarc/' + jobName + '.txt')
 
-        S.sendline(Password)
-        S.expect('\$')
-        DisplayText(S.before, S.after)
+        else:
+            S.sendline('scp -o StrictHostKeyChecking=no -r ' + UserName + '@' + masterJobHash[jobName]['ip'] + ':' + masterJobHash[jobName]['file'] + ' /usr/local/flatarc/backups/' + masterJobHash[jobName]['dir'] + '/' + masterJobHash[jobName]['file'].split('/')[-1] + '.' + jobName)
+            S.expect('word:')
+
+            DisplayText(S.before, S.after)
+
+            S.sendline(Password)
+            S.expect('\$')
+            DisplayText(S.before, S.after)
 
         EvalStatus = bytes.decode(S.before)
+        print(EvalStatus)
         if 'No such file or directory' in EvalStatus:
             print('Job failed - File could not be found.')
         else:
             Status = 'Success'
+            gitCommit(masterJobHash[jobName]['dir'])
             print()
             print('Job was successful - find file at /usr/local/flatarc/backups/' + masterJobHash[jobName]['dir'] + '/' + masterJobHash[jobName]['file'].split('/')[-1] + '.' + jobName)
+        if 'pre' in authClassHash[masterJobHash[jobName]['class']]['method']:
+            os.remove('/usr/local/flatarc/' + jobName + '.txt')
 
         S.close()
-        
         
     except:
         ourError = sys.exc_info()
@@ -243,13 +306,27 @@ def CiscoSpawn(jobName):
         UserName = authClassHash[masterJobHash[jobName]['class']]['user']
         Password = authClassHash[masterJobHash[jobName]['class']]['pass']
         prompt = '#'
-        S = pexpect.spawn('ssh -o StrictHostKeyChecking=no ' + UserName + '@' + masterJobHash[jobName]['ip']) 
-        S.expect('word:')
-        DisplayText(S.before, S.after)
 
-        S.sendline(Password)
-        S.expect(prompt)
-        DisplayText(S.before, S.after)
+        if 'pre' in authClassHash[masterJobHash[jobName]['class']]['method']:
+            subprocess.run(['touch', (jobName + '.txt')])
+            subprocess.run(['chmod', '600', (jobName + '.txt')])
+            with open(('/usr/local/flatarc/' + jobName + '.txt'), 'a') as outFile:
+                outFile.write(authClassHash[masterJobHash[jobName]['class']]['preshare'])
+            outFile.close()
+            S = pexpect.spawn('ssh -o StrictHostKeyChecking=no -i ' + ('/usr/local/flatarc/' + jobName + '.txt') + ' ' + UserName + '@' + masterJobHash[jobName]['ip'])
+            S.expect(prompt)
+            DisplayText(S.before, S.after)
+
+            os.remove('/usr/local/flatarc/' + jobName + '.txt')
+
+        else:
+            S = pexpect.spawn('ssh -o StrictHostKeyChecking=no ' + UserName + '@' + masterJobHash[jobName]['ip']) 
+            S.expect('word:')
+            DisplayText(S.before, S.after)
+
+            S.sendline(Password)
+            S.expect(prompt)
+            DisplayText(S.before, S.after)
 
         S.sendline('term len 0')
         S.expect(prompt)
@@ -261,8 +338,10 @@ def CiscoSpawn(jobName):
         DisplayText(S.before, S.after)
 
         S.sendline('exit')
+
         S.close()
         WriteFile(Result, jobName)
+        gitCommit(masterJobHash[jobName]['dir'])
         print()
         print('Job was successful! - find the file at /usr/local/flatar/backups/' +  masterJobHash[jobName]['dir'] +'/' + jobName)
     except:
@@ -279,13 +358,27 @@ def JunosSpawn(jobName):
         Password = authClassHash[masterJobHash[jobName]['class']]['pass']
 
         prompt = (UserName + '>')
-        S = pexpect.spawn('ssh -o StrictHostKeyChecking=no ' + UserName + '@' + masterJobHash[jobName]['ip'])
-        S.expect('word:')
-        DisplayText(S.before, S.after)
 
-        S.sendline(Password)
-        S.expect(prompt)
-        DisplayText(S.before, S.after)
+        if 'pre' in authClassHash[masterJobHash[jobName]['class']]['method']:
+            subprocess.run(['touch', (jobName + '.txt')])
+            subprocess.run(['chmod', '600', (jobName + '.txt')])
+            with open(('/usr/local/flatarc/' + jobName + '.txt'), 'a') as outFile:
+                outFile.write(authClassHash[masterJobHash[jobName]['class']]['preshare'])
+            outFile.close()
+            S = pexpect.spawn('ssh -o StrictHostKeyChecking=no -i ' + ('/usr/local/flatarc/' + jobName + '.txt') + ' ' + UserName + '@' + masterJobHash[jobName]['ip'])
+            S.expect(prompt)
+            DisplayText(S.before, S.after)
+
+            os.remove('/usr/local/flatarc/' + jobName + '.txt')
+        
+        else:
+            S = pexpect.spawn('ssh -o StrictHostKeyChecking=no ' + UserName + '@' + masterJobHash[jobName]['ip'])
+            S.expect('word:')
+            DisplayText(S.before, S.after)
+
+            S.sendline(Password)
+            S.expect(prompt)
+            DisplayText(S.before, S.after)
 
         S.sendline('show configuration | display set | no-more')
         S.expect(prompt)
@@ -293,8 +386,10 @@ def JunosSpawn(jobName):
         DisplayText(S.before, S.after)
 
         S.sendline('exit')
+
         S.close()
         WriteFile(Result, jobName)
+        gitCommit(masterJobHash[jobName]['dir'])
         print()
         print('Job was successful! - find the file at /usr/local/flatar/backups/' +  masterJobHash[jobName]['dir'] +'/' + jobName)
     except:
@@ -311,13 +406,27 @@ def vyosSpawn(jobName):
         Password = authClassHash[masterJobHash[jobName]['class']]['pass']
 
         prompt = (':~\$')
-        S = pexpect.spawn('ssh -o StrictHostKeyChecking=no ' + UserName + '@' + masterJobHash[jobName]['ip'])
-        S.expect('word:')
-        DisplayText(S.before, S.after)
+        if 'pre' in authClassHash[masterJobHash[jobName]['class']]['method']:
+            subprocess.run(['touch', (jobName + '.txt')])
+            subprocess.run(['chmod', '600', (jobName + '.txt')])
+            with open(('/usr/local/flatarc/' + jobName + '.txt'), 'a') as outFile:
+                outFile.write(authClassHash[masterJobHash[jobName]['class']]['preshare'])
+            outFile.close()
+            S = pexpect.spawn('ssh -o StrictHostKeyChecking=no -i ' + ('/usr/local/flatarc/' + jobName + '.txt') + ' ' + UserName + '@' + masterJobHash[jobName]['ip'])
+            S.expect(prompt)
+            DisplayText(S.before, S.after)
 
-        S.sendline(Password)
-        S.expect(prompt)
-        DisplayText(S.before, S.after)
+            os.remove('/usr/local/flatarc/' + jobName + '.txt')
+
+        else:
+            S = pexpect.spawn('ssh -o StrictHostKeyChecking=no ' + UserName + '@' + masterJobHash[jobName]['ip'])
+            S.expect('word:')
+        
+            DisplayText(S.before, S.after)
+
+            S.sendline(Password)
+            S.expect(prompt)
+            DisplayText(S.before, S.after)
 
         S.sendline('show configuration commands | no-more')
         S.expect(prompt)
@@ -325,8 +434,10 @@ def vyosSpawn(jobName):
         DisplayText(S.before, S.after)
 
         S.sendline('exit')
+
         S.close()
         WriteFile(Result, jobName)
+        gitCommit(masterJobHash[jobName]['dir'])
         print()
         print('Job was successful! - find the file at /usr/local/flatar/backups/' +  masterJobHash[jobName]['dir'] +'/' + jobName)
     except:
@@ -349,12 +460,10 @@ def WriteFile(Content, jobName):
 #################################################
 
 def WriteDeviceData():
-    #with open('/usr/local/flatarc/flatarcDeviceData.json', 'w') as outfile:
     with open('/usr/local/flatarc/json/backupJobs.json', 'w') as outfile:
         json.dump(masterJobHash, outfile)
         
 def GetDeviceData():
-    #with open('/usr/local/flatarc/flatarcDeviceData.json') as ourfile:
     with open('/usr/local/flatarc/json/backupJobs.json') as ourfile:
         masterJobHash = json.load(ourfile)
     return masterJobHash
