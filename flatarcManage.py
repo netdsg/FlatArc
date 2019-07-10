@@ -51,7 +51,10 @@ def DisplayData():
             print()
             print('Account: ' + i)
             print('Username: ' + authClassHash[i]['user'])
-            print('Method: ' + authClassHash[i]['method'])
+            if authClassHash[i]['method'] == 'pre-shared':
+                print('Method: ssh key') 
+            else:
+                print('Method: ' + authClassHash[i]['method'])
             print('Password: ' + authClassHash[i]['pass'])
         print()
         input('press enter to continue.')
@@ -93,7 +96,7 @@ def DisplayAccount():
         print('Password: ' + authClassHash[Account]['pass'])
         print()
         if 'pre' in authClassHash[Account]['method']:
-            viewKey = input('Would you lke to veiw the pre-shared key (yes,no): ')
+            viewKey = input('Would you lke to veiw the private key (yes,no): ')
             if 'yes' in viewKey:
                 print(authClassHash[Account]['preshare'])
         input('Press enter to continue.')
@@ -107,12 +110,13 @@ def AddAccount():
         preSharedKey = ''
         PlainPassword = ''
         User = input('Enter username: ')
-        method = input('Will this class use password or pre-shared key authentication (password, pre-shared): ')
-        if 'pre' in method:
+        method = input('Will this class use password or ssh key authentication (password, key): ')
+        if 'key' in method:
             endOfInput = ''
-            print('Enter the pre-shared key and press enter: ')
+            print('Enter the private key and press enter: ')
             for line in iter(input, endOfInput):
                 preSharedKey += (line + '\n')
+            method = 'pre-shared'
         else:
             PlainPassword = input('Enter Password: ')
         authClassHash[Account] = {}
