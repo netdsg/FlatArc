@@ -7,7 +7,7 @@ from simplecrypt import *
 ####  Password Managment 
 ############################################
 
-### Change the EVar variable at installation time!
+### Change the EVar variable at installation time! - this is the variable that hashes the passwords
 ### This must also be changed and match in the flatarc.py file.
 ### These files should have permissions that do not allow others to view them.
 
@@ -47,17 +47,17 @@ def getAuthClassHash():
 
 def DisplayData():
     if authClassHash != {}:
+        dText = ''
         for i in authClassHash:
-            print()
-            print('Account: ' + i)
-            print('Username: ' + authClassHash[i]['user'])
+            dText += ('\nAccount: ' + i)
+            dText += ('\nUsername: ' + authClassHash[i]['user'])
             if authClassHash[i]['method'] == 'pre-shared':
-                print('Method: ssh key') 
+                dText += ('\nMethod ssh key')
             else:
-                print('Method: ' + authClassHash[i]['method'])
-            print('Password: ' + authClassHash[i]['pass'])
+                dText += ('\nMethod: ' + authClassHash[i]['method'])
+            dText += ('\nPassword: ' + authClassHash[i]['pass'] + '\n\n#######################\n')
+        pydoc.pager(dText)
         print()
-        input('press enter to continue.')
     else:
         print('No Authentication Class data was found.')
         print()
@@ -494,12 +494,26 @@ def printJobHash(name, jobHash):
 def viewAll():
     print()
     if masterJobHash != {}:
+        dText = ''
         for j in masterJobHash:
-            printJobHash(j, masterJobHash[j])
+            #printJobHash(j, masterJobHash[j])
+            dText += ('Job Name: ' + j + '\n')
+            dText += ('Authentication Class: ' + masterJobHash[j]['class'] + '\n')
+            dText += ('Device Status: ' + masterJobHash[j]['status'] + '\n')
+            dText += ('Backup Interval: ' + masterJobHash[j]['interval'] + '\n')
+            dText += ('Access Protocol: ' + masterJobHash[j]['protocol'] + '\n')
+            dText += ('Backup Directory: ' + masterJobHash[j]['dir'] + '\n')
+            dText += ('IP Address: ' + masterJobHash[j]['ip'] + '\n')
+            if 'syntax' in masterJobHash[j]:
+                dText += ('Syntax: ' + masterJobHash[j]['syntax'] + '\n')
+            if 'file' in masterJobHash[j]:
+                dText += ('file: ' + masterJobHash[j]['file'] + '\n')
+            dText += ('\n#############################\n\n')
+        pydoc.pager(dText)
     else:
         print('There are currently no devices managed by flatarc.')
-    print()
-    input('Press enter to continue: ')
+        print()
+        input('Press enter to continue: ')
 
 
 def CheckDir(ourDir):
