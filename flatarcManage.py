@@ -13,36 +13,41 @@ from simplecrypt import *
 
 EVar = 'thisvariablehashesthepasswords'
 
-def writeAuthClassHash():
+def writeAuthClassHash(Account, changePass):
     if authClassHash != {}:
-        for c in authClassHash:
-            print('encrypting!')
-            cipherPass = encrypt(EVar, authClassHash[c]['pass'])
-            with open('/usr/local/flatarc/auth_class/auth_class_' + c + '.flatarc', 'wb') as output:
+        if changePass == 'yes' and authClassHash[Account]['method'] == 'password':
+            print('encrypting ' + Account)
+            cipherPass = encrypt(EVar, authClassHash[Account]['pass'])
+            with open('/usr/local/flatarc/auth_class/auth_class_' + Account + '.flatarc', 'wb') as output:
                 output.write(cipherPass)
-            cipherPreShare = encrypt(EVar, authClassHash[c]['preshare'])
-            with open('/usr/local/flatarc/auth_class/auth_class_preshared' + c + '.flatarc', 'wb') as output:
+        elif changePass == 'yes' and 'pre' in authClassHash[Account]['method']:
+            cipherPreShare = encrypt(EVar, authClassHash[Account]['preshare'])
+            with open('/usr/local/flatarc/auth_class/auth_class_preshared' + Account + '.flatarc', 'wb') as output:
                 output.write(cipherPreShare)
-            ourHash = {}
-            for i in authClassHash:
-                ourHash[i] = {}
-                ourHash[i]['user'] = authClassHash[i]['user']
-                ourHash[i]['method'] = authClassHash[i]['method']
-        with open('/usr/local/flatarc/json/flatarcClass.json', 'w') as ourfile:
-            json.dump(ourHash, ourfile)
+        ourHash = {}
+        for i in authClassHash:
+            ourHash[i] = {}
+            ourHash[i]['user'] = authClassHash[i]['user']
+            ourHash[i]['method'] = authClassHash[i]['method']
+    with open('/usr/local/flatarc/json/flatarcClass.json', 'w') as ourfile:
+        json.dump(ourHash, ourfile)
 
 def getAuthClassHash():
     with open('/usr/local/flatarc/json/flatarcClass.json') as ourFile:
         ourHash = json.load(ourFile)
         for c in ourHash:
-            with open(('/usr/local/flatarc/auth_class/auth_class_' + c + '.flatarc'), 'rb') as inbound:
-                cipherPass = inbound.read()
-            print('decrypting!')
-            ourHash[c]['pass'] = bytes.decode(decrypt(EVar, cipherPass))
-            with open(('/usr/local/flatarc/auth_class/auth_class_preshared' + c + '.flatarc'), 'rb') as inbound:
-                cipherPreShare = inbound.read()
-            print('decrypting!')
-            ourHash[c]['preshare'] = bytes.decode(decrypt(EVar, cipherPreShare))
+            if ourHash[c]['method'] == 'password':
+                with open(('/usr/local/flatarc/auth_class/auth_class_' + c + '.flatarc'), 'rb') as inbound:
+                    cipherPass = inbound.read()
+                print('decrypting ' + c)
+                ourHash[c]['pass'] = bytes.decode(decrypt(EVar, cipherPass))
+                ourHash[c]['preshare'] = 'null'
+            if ourHash[c]['method'] == 'pre-shared':
+                with open(('/usr/local/flatarc/auth_class/auth_class_preshared' + c + '.flatarc'), 'rb') as inbound:
+                    cipherPreShare = inbound.read()
+                print('decrypting ' + c)
+                ourHash[c]['preshare'] = bytes.decode(decrypt(EVar, cipherPreShare))
+                ourHash[c]['pass'] = 'null'
     return ourHash
 
 def DisplayData():
@@ -105,6 +110,7 @@ def DisplayAccount():
         input('Press enter to continue.')
 
 def AddAccount():
+    changePass = 'yes'
     Account = input('Enter Authentication Class name: ')
     if Account not in authClassHash:
         preSharedKey = ''
@@ -124,7 +130,7 @@ def AddAccount():
         authClassHash[Account]['pass'] = PlainPassword
         authClassHash[Account]['method'] = method
         authClassHash[Account]['preshare'] = preSharedKey
-        writeAuthClassHash()
+        writeAuthClassHash(Account, changePass)
         print()
         print(Account + ' Has been added.')
         input('Press enter to continue.')
@@ -133,6 +139,8 @@ def AddAccount():
         input('press enter to continue.')
 
 def RmAccount():
+    ### check if changePass needs to be set!
+    changePass = 'null'
     Account = input('Enter Authentication Class name: ')
     if Account in authClassHash:
         print('Would you like to remove this Authentication Class?: ')
@@ -143,7 +151,7 @@ def RmAccount():
         if Delta == 'yes':
             del authClassHash[Account]
             os.remove('/usr/local/flatarc/auth_class/auth_class_' + Account + '.flatarc')
-            writeAuthClassHash()
+            writeAuthClassHash(Account, changePass)
             print('This Authentication Class has been removed.')
             input('press enter to continue.')
         else:
@@ -154,37 +162,78 @@ def RmAccount():
         input('press enter to continue.')
 
 def EditAccount():
+    ### need to allow shh key change here!
     print()
     Account = input('Enter Authentication Class name: ' )
     if Account in authClassHash:
+        changePass = 'null'
         print()
         print('AuthenticationClass: ' + Account)
         print('Username: ' + authClassHash[Account]['user'])
         print('Password: ' + authClassHash[Account]['pass'])
+        if authClassHash[Account]['method'] == 'pre-shared':
+            print('Method: ssh key')
+        else:
+            print('Method: ' + authClassHash[Account]['method'])
         print()
         print('1 - Change authentication class name')
         print('2 - Change username')
         print('3 - Change password')
+        print('4 - Change method')
+        print('5 - Change ssh private key')
         print()
         Option = input('Enter option: ')
         if Option == '1':
             NewAccount = input('Enter new class name: ')
             authClassHash[NewAccount] = authClassHash[Account]
             del authClassHash[Account]
-            os.remove('/usr/local/flatarc/auth_class/auth_class_' + Account + '.flatarc')
+            try:
+                os.remove('/usr/local/flatarc/auth_class/auth_class_' + Account + '.flatarc')
+                os.remove('/usr/local/flatarc/auth_class/auth_class_' + Account + '_key.flatarc')
+            except:
+                pass
             Account = NewAccount
+            changePass = 'yes'
         if Option == '2':
             NewUser = input('Enter new username: ')
             authClassHash[Account]['user'] = NewUser
         if Option == '3':
             NewPass = input('Enter new password: ')
             authClassHash[Account]['pass'] = NewPass
-        writeAuthClassHash()
+            changePass = 'yes'
+        if Option == '4':
+            methodOption = input('Enter new method (password, key): ')
+            if 'key' in methodOption:
+                authClassHash[Account]['method'] = 'pre-shared'
+                print('Enter the private key and press enter: ')
+                endOfInput = ''
+                preSharedKey = ''
+                for line in iter(input, endOfInput):
+                    preSharedKey += (line + '\n')
+                authClassHash[Account]['preshare'] = preSharedKey
+            else:
+                authClassHash[Account]['pass'] = input('Enter new password: ')
+                authClassHash[Account]['method'] = 'password'
+            changePass = 'yes'
+        if Option == '5': 
+            print('Enter the private key and press enter: ')
+            endOfInput = ''
+            preSharedKey = ''
+            for line in iter(input, endOfInput):
+                preSharedKey += (line + '\n')
+            authClassHash[Account]['preshare'] = preSharedKey
+            changePass = 'yes'
+        writeAuthClassHash(Account, changePass)
         print()
         print('New class Data:')
         print('Class: ' + Account)
         print('Username: ' + authClassHash[Account]['user'])
         print('Password: ' + authClassHash[Account]['pass'])
+        if authClassHash[Account]['method'] == 'pre-shared':
+            print('Method: ssh key')
+        else:
+            print('Method: ' + authClassHash[Account]['method'])
+        print()
         input('Press enter to continue.')
     else:
         print('Account not found.')

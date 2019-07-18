@@ -25,14 +25,18 @@ def getAuthClassHash():
     with open('/usr/local/flatarc/json/flatarcClass.json') as ourFile:
         ourHash = json.load(ourFile)
         for c in ourHash:
-            with open(('/usr/local/flatarc/auth_class/auth_class_' + c + '.flatarc'), 'rb') as inbound:
-                cipherPass = inbound.read()
-            #print('decrypting!')
-            ourHash[c]['pass'] = bytes.decode(decrypt(EVar, cipherPass))
-            with open(('/usr/local/flatarc/auth_class/auth_class_preshared' + c + '.flatarc'), 'rb') as inbound:
-                cipherPreShare = inbound.read()
-            #print('decrypting!')
-            ourHash[c]['preshare'] = bytes.decode(decrypt(EVar, cipherPreShare))
+            if ourHash[c]['method'] == 'password':
+                with open(('/usr/local/flatarc/auth_class/auth_class_' + c + '.flatarc'), 'rb') as inbound:
+                    cipherPass = inbound.read()
+                #print('decrypting ' + c)
+                ourHash[c]['pass'] = bytes.decode(decrypt(EVar, cipherPass))
+                ourHash[c]['preshare'] = 'null'
+            if ourHash[c]['method'] == 'pre-shared':
+                with open(('/usr/local/flatarc/auth_class/auth_class_preshared' + c + '.flatarc'), 'rb') as inbound:
+                    cipherPreShare = inbound.read()
+                print('decrypting ' + c)
+                ourHash[c]['preshare'] = bytes.decode(decrypt(EVar, cipherPreShare))
+                ourHash[c]['pass'] = 'null'
     return ourHash
 
 def DisplayText(VAR, VAR2):
