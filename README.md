@@ -1,7 +1,7 @@
 # FlatArc Version 2
 A utility that automatically archives flat configuration files such as those found on network devices.
 
-This utility runs as a service and is intended to periodically backup flat configuration files at an interval dictated by the user.  If you would like this software to have additional functionality please open an issue.  FlatArc uses SSH to backup network device configurations, SCP to backup files or directories on servers, and GIT in order to track changes.
+This utility runs as a service and is intended to periodically backup flat configuration files at an interval dictated by the user.  FlatArc uses SSH to backup network device configurations, SCP to backup files or directories on servers, and GIT in order to track changes.
 
 ![alt tag](https://github.com/netdsg/FlatArc/blob/master/FlatArcFlow.png)
 
