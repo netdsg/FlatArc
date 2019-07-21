@@ -21,8 +21,9 @@ def writeAuthClassHash(Account, changePass):
             with open('/usr/local/flatarc/auth_class/auth_class_' + Account + '.flatarc', 'wb') as output:
                 output.write(cipherPass)
         elif changePass == 'yes' and 'pre' in authClassHash[Account]['method']:
+            print('encrypting ' + Account)
             cipherPreShare = encrypt(EVar, authClassHash[Account]['preshare'])
-            with open('/usr/local/flatarc/auth_class/auth_class_preshared' + Account + '.flatarc', 'wb') as output:
+            with open('/usr/local/flatarc/auth_class/auth_class_' + Account + '_key.flatarc', 'wb') as output:
                 output.write(cipherPreShare)
         ourHash = {}
         for i in authClassHash:
@@ -43,7 +44,7 @@ def getAuthClassHash():
                 ourHash[c]['pass'] = bytes.decode(decrypt(EVar, cipherPass))
                 ourHash[c]['preshare'] = 'null'
             if ourHash[c]['method'] == 'pre-shared':
-                with open(('/usr/local/flatarc/auth_class/auth_class_preshared' + c + '.flatarc'), 'rb') as inbound:
+                with open(('/usr/local/flatarc/auth_class/auth_class_' + c + '_key.flatarc'), 'rb') as inbound:
                     cipherPreShare = inbound.read()
                 print('decrypting ' + c)
                 ourHash[c]['preshare'] = bytes.decode(decrypt(EVar, cipherPreShare))
@@ -150,7 +151,11 @@ def RmAccount():
         Delta = input('yes/no: ')
         if Delta == 'yes':
             del authClassHash[Account]
-            os.remove('/usr/local/flatarc/auth_class/auth_class_' + Account + '.flatarc')
+            try:
+                os.remove('/usr/local/flatarc/auth_class/auth_class_' + Account + '.flatarc')
+                os.remove('/usr/local/flatarc/auth_class/auth_class_' + Account + '_key.flatarc')
+            except:
+                pass
             writeAuthClassHash(Account, changePass)
             print('This Authentication Class has been removed.')
             input('press enter to continue.')
@@ -274,8 +279,12 @@ def runBackupJob():
         if jobName not in masterJobHash:
             print('Job not found.')
             print()
-            #input('Press enter to continue')
             break
+        elif masterJobHash[jobName]['class'] not in authClassHash:
+            print('authentication class ' + masterJobHash[jobName]['class'] + ' not found.')
+            print()
+            break
+
         else:
             if masterJobHash[jobName]['protocol'] == 'scp':
                 ScpSpawn(jobName)
@@ -341,9 +350,6 @@ def ScpSpawn(jobName):
             gitCommit(masterJobHash[jobName]['dir'])
             print()
             print('Job was successful - find file at /usr/local/flatarc/backups/' + masterJobHash[jobName]['dir'] + '/' + masterJobHash[jobName]['file'].split('/')[-1] + '.' + jobName)
-        if 'pre' in authClassHash[masterJobHash[jobName]['class']]['method']:
-            os.remove('/usr/local/flatarc/' + jobName + '.txt')
-
         S.close()
         
     except:

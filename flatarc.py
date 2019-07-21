@@ -32,7 +32,7 @@ def getAuthClassHash():
                 ourHash[c]['pass'] = bytes.decode(decrypt(EVar, cipherPass))
                 ourHash[c]['preshare'] = 'null'
             if ourHash[c]['method'] == 'pre-shared':
-                with open(('/usr/local/flatarc/auth_class/auth_class_preshared' + c + '.flatarc'), 'rb') as inbound:
+                with open(('/usr/local/flatarc/auth_class/auth_class_' + c + '_key.flatarc'), 'rb') as inbound:
                     cipherPreShare = inbound.read()
                 print('decrypting ' + c)
                 ourHash[c]['preshare'] = bytes.decode(decrypt(EVar, cipherPreShare))
