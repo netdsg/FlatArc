@@ -5,7 +5,7 @@ This utility runs as a service and is intended to periodically backup flat confi
 
 ![alt tag](https://github.com/netdsg/FlatArc/blob/master/FlatArcFlow.png)
 
-The administator uses flatarcManage.py to launch a CLI based management program.  In order for all the file permissions to be correct this progam must be invoked by the 'flatarc' user.  This program will allow the adminstrator to add, modify or remove devices to get backed up.  The backup interval is in hours.  This program also allows the administator to add, modify or remove 'authentication classes'.  'authentication classes' are username/password pairs that FlatArc will use to log into the network equpiment.  The passwords are encrypted with simple-crypt when writing them to disk.  The files refrenced in the above flow chart will be found in the /usr/local/flatarc directory.
+The administator uses flatarcManage.py to launch a CLI based management program.  In order for all the file permissions to be correct this progam must be invoked by the 'flatarc' user.  This program will allow the adminstrator to add, modify or remove devices to get backed up.  The backup interval is in hours.  This program also allows the administator to add, modify or remove 'authentication classes'.  'authentication classes' are username/password pairs that FlatArc will use to log into the network equpiment.  The passwords are encrypted with simple-crypt when writing them to disk.  The files refrenced in the above flow chart will be found in the /usr/local/flatarc/json directory.
 
 The backup directories will be found in /usr/local/flatarc/backups/
 
